@@ -86,6 +86,7 @@ class Github_Pr_Review_Webhook(APIView):
             if action != ['opened','reopened','synchronize']:
                 
                 print('if condition of action check')
+                print('one more if same as above')
                 
                 return Response({'msg':'this is not a new pr request'})
             else:
