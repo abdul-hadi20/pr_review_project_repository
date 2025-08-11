@@ -83,7 +83,7 @@ class Github_Pr_Review_Webhook(APIView):
         
         if pr_information:
             print('if condition of pr information')
-            if action != ['opened','reopened','synchronize']:
+            if action not in ['opened','reopened','synchronize']:
                 
                 print('if condition of action check')
                 print('one more if same as above')
