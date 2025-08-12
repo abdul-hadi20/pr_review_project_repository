@@ -101,8 +101,8 @@ class Github_Pr_Review_Webhook(APIView):
                 # Clone the PR’s branch from GitHub into our local folder.
                 Repo.clone_from(clone_url,local_path,branch=branch_name)
                 
-                openai.api_key = openai_key
                 openai_key = os.getenv("OPENAI_API_KEY")
+                openai.api_key = openai_key
                 
                 pr_files=pr.get_files()
                 pr_code=''
