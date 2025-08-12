@@ -141,7 +141,7 @@ class Github_Pr_Review_Webhook(APIView):
                     )
                     print('try2')
                     print(response)
-                    ai_review = response.choices[0].message['content']
+                    ai_review = response.choices[0].message.content
                     print('ai_review',ai_review)
                     
                 except Exception as e:
