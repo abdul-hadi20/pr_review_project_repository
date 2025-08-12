@@ -139,6 +139,7 @@ class Github_Pr_Review_Webhook(APIView):
                         max_tokens=500,
                         temperature=0.3
                     )
+                    print('try2')
                     
                     ai_review = response.choices[0].message['content']
                     print('ai_review',ai_review)
