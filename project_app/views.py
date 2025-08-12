@@ -106,6 +106,8 @@ class Github_Pr_Review_Webhook(APIView):
                 print('cloned successfully')
                 
                 openai_key = os.getenv("OPENAI_API_KEY")
+                if not openai_key:
+                    return Response({'error':'openai api key not found'},status=500)
                 openai.api_key = openai_key
                 print(openai_key)
                 
@@ -130,6 +132,7 @@ class Github_Pr_Review_Webhook(APIView):
                     response=openai.ChatCompletion.create(
                         model='gpt-4o-mini',
                         messages=[
+                            {'role':'system','content':'you are a helpful code review assistant'},
                             {'role':'user','content':prompt}
                         ],
                         max_tokens=500,
