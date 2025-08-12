@@ -10,7 +10,7 @@ import shutil
 import hmac
 import hashlib
 from django.conf import settings
-
+import openai
 # GitHub Personal Access Token for API authentication
 
 
@@ -66,7 +66,7 @@ class Github_Pr_Review_Webhook(APIView):
         pr_information=payload.get('pull_request')
         
         if pr_information:
-            if action != ['opened','reopened','synchronize']:
+            if action not in ['opened','reopened','synchronize']:
                 return Response({'msg':'this is not a new pr request'})
             else:
                 # Get the repository's full name.
@@ -101,7 +101,35 @@ class Github_Pr_Review_Webhook(APIView):
                 # Clone the PR’s branch from GitHub into our local folder.
                 Repo.clone_from(clone_url,local_path,branch=branch_name)
                 
-                return Response({'msg':'cloned successfuly'})
+                openai.api_key = openai_key
+                openai_key = os.getenv("OPENAI_API_KEY")
+                
+                pr_files=pr.get_files()
+                pr_code=''
+                for file in pr_files:
+                    pr_code=pr_code+f"file:{file.filename}\n"
+                    if file.patch:
+                        pr_code=pr_code+file.patch + "\n"
+                
+                prompt=f"review the following pr code and give me feedback or commens\n {pr_code}"
+                try:
+                    response=openai.ChatCompletion.create(
+                        model='gpt-4o-mini',
+                        messages=[
+                            {'role':'user','content':prompt}
+                        ],
+                        max_tokens=500,
+                        temperature=0.3
+                    )
+                    ai_review = response.choices[0].message['content']
+                    
+                except Exception as e:
+                    return Response({'msg':'cloned successfully but openai review failed'})
+                
+                return Response({
+                    'msg':'Cloned successfully and reviewed by AI',
+                    'ai_review':ai_review
+                })
         
         else:
             return Response({'msg':'pr_info not found'})
