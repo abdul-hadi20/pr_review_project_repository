@@ -96,7 +96,7 @@ class Github_Pr_Review_Webhook(APIView):
                 branch_name=pr.head.ref
                 
                 # Decide where on our computer we want to store this PR's code.
-                local_path=f"/home/abdul-hadi/Documents/cloned_pr/pr_{pr_number}"
+                local_path = "/home/abdul-hadi/Documents/cloned_pr/current_pr"
                 
                 # If the folder already exists (from an old clone), delete it first.
                 if os.path.exists(local_path):
