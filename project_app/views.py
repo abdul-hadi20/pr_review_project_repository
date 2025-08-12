@@ -97,39 +97,28 @@ class Github_Pr_Review_Webhook(APIView):
                 
                 # Decide where on our computer we want to store this PR's code.
                 local_path=f"/home/abdul-hadi/Documents/cloned_pr/pr_{pr_number}"
-                print(local_path)
                 
                 # If the folder already exists (from an old clone), delete it first.
                 if os.path.exists(local_path):
                     shutil.rmtree(local_path)   # Completely removes the folder and its files.
                 # Clone the PR’s branch from GitHub into our local folder.
                 Repo.clone_from(clone_url,local_path,branch=branch_name)
-                print('cloned successfully')
                 
                 openai_key = os.getenv("OPENAI_API_KEY")
                 if not openai_key:
                     return Response({'error':'openai api key not found'},status=500)
                 client = OpenAI(api_key=openai_key)
-                print(openai_key)
-                print('okokokokoko')
                 
                 pr_files=pr.get_files()
-                print(pr_files)
                 pr_code=''
                 for file in pr_files:
-                    print('for loop of files')
                     pr_code=pr_code+f"file:{file.filename}\n"
-                    print(pr_code)
                     if file.patch:
-                        print('if condition of file patch')
                         pr_code=pr_code+file.patch + "\n"
-                        print('pr_code',pr_code)
                 
                 prompt=f"review the following pr code and give me feedback or commens\n {pr_code}"
-                print('prompt',prompt)
                 
                 try:
-                    print('try')
                     response=client.chat.completions.create(
                         model='gpt-4o-mini',
                         messages=[
@@ -139,16 +128,12 @@ class Github_Pr_Review_Webhook(APIView):
                         max_tokens=500,
                         temperature=0.3
                     )
-                    print('try2')
-                    print(response)
+
                     ai_review = response.choices[0].message.content
-                    print('ai_review',ai_review)
                     
                 except Exception as e:
-                    print('exception error')
                     return Response({'msg':'cloned successfully but openai review failed'})
                 
-                print('final')
                 return Response({
                     'msg':'Cloned successfully and reviewed by AI',
                     'ai_review':ai_review
