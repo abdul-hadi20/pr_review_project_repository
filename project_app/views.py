@@ -11,14 +11,15 @@ import hmac
 import hashlib
 from django.conf import settings
 import openai
+from openai import OpenAI
 # GitHub Personal Access Token for API authentication
-
 
 github_token=os.getenv('GITHUB_TOKEN')
 
 # Secret key for verifying GitHub webhook signature
 
 github_secret = os.getenv('GITHUB_SECRET').encode()
+
 class Github_Pr_Review_Webhook(APIView):
     
     def signature_verification(self,request):
@@ -31,12 +32,14 @@ class Github_Pr_Review_Webhook(APIView):
                 #github send a header with the signature 
 
         header_signature=request.headers.get('X-Hub-Signature-256')
+        
         if not header_signature:
             #if no signature found --> reject the request
             return False
         
         #it tell us the signature format is "sha256=<hash>"
         sha_name,signature=header_signature.split('=')
+        
         if sha_name != 'sha256':
             #if used wrong algorithm --> reject it 
             return False
@@ -46,11 +49,12 @@ class Github_Pr_Review_Webhook(APIView):
         
         #it compare the github signature with ours 
         return hmac.compare_digest(calculated_signature.hexdigest(),signature)
-        
+    
     def post(self,request):
         #it verifies the request signature
         # GitHub sends a special "X-Hub-Signature-256" header with each webhook request.
         # We check it using our secret key to make sure no one else is pretending to be GitHub.
+        
         if not self.signature_verification(request):
             return Response({'error': 'Invalid signature'}, status=403)
         
@@ -97,12 +101,13 @@ class Github_Pr_Review_Webhook(APIView):
                 # If the folder already exists (from an old clone), delete it first.
                 if os.path.exists(local_path):
                     shutil.rmtree(local_path)   # Completely removes the folder and its files.
-                    
                 # Clone the PR’s branch from GitHub into our local folder.
                 Repo.clone_from(clone_url,local_path,branch=branch_name)
                 
                 openai_key = os.getenv("OPENAI_API_KEY")
-                openai.api_key = openai_key
+                if not openai_key:
+                    return Response({'error':'openai api key not found'},status=500)
+                client = OpenAI(api_key=openai_key)
                 
                 pr_files=pr.get_files()
                 pr_code=''
@@ -112,16 +117,19 @@ class Github_Pr_Review_Webhook(APIView):
                         pr_code=pr_code+file.patch + "\n"
                 
                 prompt=f"review the following pr code and give me feedback or commens\n {pr_code}"
+                
                 try:
-                    response=openai.ChatCompletion.create(
+                    response=client.chat.completions.create(
                         model='gpt-4o-mini',
                         messages=[
+                            {'role':'system','content':'you are a helpful code review assistant'},
                             {'role':'user','content':prompt}
                         ],
                         max_tokens=500,
                         temperature=0.3
                     )
-                    ai_review = response.choices[0].message['content']
+
+                    ai_review = response.choices[0].message.content
                     
                 except Exception as e:
                     return Response({'msg':'cloned successfully but openai review failed'})
