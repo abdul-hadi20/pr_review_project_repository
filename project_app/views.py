@@ -11,6 +11,7 @@ import hmac
 import hashlib
 from django.conf import settings
 import openai
+from openai import OpenAI
 # GitHub Personal Access Token for API authentication
 
 github_token=os.getenv('GITHUB_TOKEN')
@@ -108,7 +109,7 @@ class Github_Pr_Review_Webhook(APIView):
                 openai_key = os.getenv("OPENAI_API_KEY")
                 if not openai_key:
                     return Response({'error':'openai api key not found'},status=500)
-                openai.api_key = openai_key
+                client = OpenAI(api_key=openai_key)
                 print(openai_key)
                 
                 
@@ -129,7 +130,7 @@ class Github_Pr_Review_Webhook(APIView):
                 
                 try:
                     print('try')
-                    response=openai.ChatCompletion.create(
+                    response=client.chat.completions.create(
                         model='gpt-4o-mini',
                         messages=[
                             {'role':'system','content':'you are a helpful code review assistant'},
