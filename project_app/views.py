@@ -102,19 +102,30 @@ class Github_Pr_Review_Webhook(APIView):
                     shutil.rmtree(local_path)   # Completely removes the folder and its files.
                 # Clone the PR’s branch from GitHub into our local folder.
                 Repo.clone_from(clone_url,local_path,branch=branch_name)
+                print('cloned successfully')
                 
                 openai.api_key = openai_key
                 openai_key = os.getenv("OPENAI_API_KEY")
+                print(openai_key)
+                
                 
                 pr_files=pr.get_files()
+                print(pr_files)
                 pr_code=''
                 for file in pr_files:
+                    print('for loop of files')
                     pr_code=pr_code+f"file:{file.filename}\n"
+                    print(pr_code)
                     if file.patch:
+                        print('if condition of file patch')
                         pr_code=pr_code+file.patch + "\n"
+                        print('pr_code',pr_code)
                 
                 prompt=f"review the following pr code and give me feedback or commens\n {pr_code}"
+                print('prompt',prompt)
+                
                 try:
+                    print('try')
                     response=openai.ChatCompletion.create(
                         model='gpt-4o-mini',
                         messages=[
@@ -123,16 +134,18 @@ class Github_Pr_Review_Webhook(APIView):
                         max_tokens=500,
                         temperature=0.3
                     )
+                    
                     ai_review = response.choices[0].message['content']
+                    print('ai_review',ai_review)
                     
                 except Exception as e:
+                    print('exception error')
                     return Response({'msg':'cloned successfully but openai review failed'})
                 
                 return Response({
                     'msg':'Cloned successfully and reviewed by AI',
                     'ai_review':ai_review
                 })
-        
         
         else:
             return Response({'msg':'pr_info not found'})
