@@ -146,6 +146,7 @@ class Github_Pr_Review_Webhook(APIView):
                     print('exception error')
                     return Response({'msg':'cloned successfully but openai review failed'})
                 
+                print('final')
                 return Response({
                     'msg':'Cloned successfully and reviewed by AI',
                     'ai_review':ai_review
